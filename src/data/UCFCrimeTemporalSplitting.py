@@ -6,6 +6,7 @@ from torchvision.io import read_video, write_video
 import numpy as np
 import os
 from joblib import Parallel, delayed
+# from tqdm import tqdm
 
 
 def video_name(video_path):
@@ -22,7 +23,7 @@ def writing_csv_train(video_write_path, crime_name, path, file_type='train'):
     row_data = [video_write_path, crime_name]
 
     # 1. Open a new CSV file
-    with open(path + f'{file_type}.csv', 'a+') as file:
+    with open(path + f'{file_type}.csv', 'a') as file:
         # 2. Create a CSV writer
         writer = csv.writer(file)
         # 3. Write data to the file
@@ -36,15 +37,15 @@ class UCFTemporalSplitting:
         self.FRAMES_PER_SEC = 30
 
         # UCF_CRIME_DATASET
-        self.TRAIN_ANNOTATIONS_SECS_LEVEL = '../data/raw/ucfcrime_v2/public_ucfcrimev2/annotations/train.json'
-        self.TEST_ANNOTATIONS_SECS_LEVEL = '../data/raw/ucfcrime_v2/public_ucfcrimev2/annotations/test.json'
+        self.TRAIN_ANNOTATIONS_SECS_LEVEL = '../../data/raw/ucfcrime_v2/public_ucfcrimev2/annotations/train.json'
+        self.TEST_ANNOTATIONS_SECS_LEVEL = '../../data/raw/ucfcrime_v2/public_ucfcrimev2/annotations/test.json'
 
         # VIDEO LEVEL FILE PATHS
-        self.PATH_TRAIN_VIDEO_LEVEL = '../data/interim/train/'
-        self.PATH_TEST_VIDEO_LEVEL = '../data/interim/test/'
+        self.PATH_TRAIN_VIDEO_LEVEL = '../../data/interim/train/'
+        self.PATH_TEST_VIDEO_LEVEL = '../../data/interim/test/'
 
         # VIDEO_PATHS
-        self.VIDEO_PATHS = '../data/raw/'
+        self.VIDEO_PATHS = '../../data/raw/'
 
         # CHOSEN CRIME ACTION THAT CAN BE OCCURRED IN CAMPUS
         self.CRIME_ACTION = ['Abuse', 'Fighting', 'Vandalism']
@@ -77,20 +78,24 @@ class UCFTemporalSplitting:
         videos = {}
         for i in range(len(videos_temporal)):
             videos[i] = np.arange(int(videos_temporal['start'].iloc[i]), int(videos_temporal['end'].iloc[i]), 5)
-            for video in videos:
-                for j in range(len(videos[video])):
-                    start = videos[video][j]
-                    end = videos[video][j + 1]
-                    full_path = self.VIDEO_PATHS + video_pth
-                    crime_name, vid_name = video_name(video_pth)
-                    write_path = self.PATH_TRAIN_VIDEO_LEVEL + crime_name
-                    video_write_path = write_path + '/' + vid_name + f'_{start}_{end}' + '.mp4'
-                    os.makedirs(write_path, exist_ok=True)
-                    # print(video_write_path)
-                    frames, _, _ = read_video(full_path, start_pts=start, end_pts=end, pts_unit='sec')
-                    write_video(video_write_path, frames, fps=30)
-                    writing_csv_train(video_write_path, crime_name, self.path_csv, self.csv_file_type)
+            for j in range(len(videos[i])-1):
+                start = videos[i][j]
+                end = videos[i][j + 1]
+                full_path = self.VIDEO_PATHS + video_pth
+                crime_name, vid_name = video_name(video_pth)
+                write_path = self.path_csv + crime_name
+                video_write_path = write_path + '/' + vid_name + f'_{start}_{end}' + '.mp4'
+                os.makedirs(write_path, exist_ok=True)
+                # print(video_write_path)
+                frames, _, _ = read_video(full_path, start_pts=start, end_pts=end, pts_unit='sec')
+                write_video(video_write_path, frames, fps=30)
+                writing_csv_train(video_write_path, crime_name, self.path_csv, self.csv_file_type)
 
     def multiprocessing_temporal_splitting(self, temporal_annotation):
         Parallel(n_jobs=os.cpu_count(), prefer='threads', verbose=10)(
             delayed(self.write_videos)(temporal_annotation, video_pth) for video_pth in temporal_annotation)
+
+
+if __name__ == "__main__":
+    temp_splitting_train = UCFTemporalSplitting(train=True)
+    temp_splitting_test = UCFTemporalSplitting(train=False)

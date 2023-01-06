@@ -1,5 +1,5 @@
 import pandas as pd
-from UCFCrimeTemporalSplitting import writing_csv_train, video_name
+from src.data.UCFCrimeTemporalSplitting import video_name
 import os
 import numpy as np
 

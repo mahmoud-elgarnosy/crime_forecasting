@@ -1,6 +1,8 @@
-torchvision~=0.14.0
-setuptools==65.6.3
-numpy==1.23.5
 pandas~=1.5.2
+numpy~=1.23.5
 joblib~=1.1.1
-ffmpeg~=5.1.2
+setuptools~=65.6.3
+av==10.0.0
+click~=8.0.4
+flask~=2.2.2
+pillow~=9.3.0

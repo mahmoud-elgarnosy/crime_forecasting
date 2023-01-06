@@ -1,0 +1,16 @@
+conda create -n crime_nightly
+conda activate crime_nightly
+if cpu:
+    conda install pytorch torchvision torchaudio cpuonly -c pytorch-nightly
+else:
+    conda install pytorch torchvision torchaudio pytorch-cuda=11.7 -c pytorch-nightly -c nvidia
+
+C:\Users\mahmo\anaconda3\Scripts\conda.exe install -p C:/Users/mahmo/anaconda3/envs/crime_nightly ffmpeg==4.2 -y
+
+wsl --install
+https://www.nginx.com/blog/video-streaming-for-remote-learning-with-nginx/
+Just add events { } above the http { line:
+
+conda install -c conda-forge opencv
+pip install -U pip setuptools wheel
+pip install -r requirements.txt
