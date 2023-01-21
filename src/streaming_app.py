@@ -2,7 +2,7 @@ import subprocess
 import cv2
 rtmp_url = "rtmp://localhost/live/stream"
 
-# In my mac webcamera is 0, also you can set a video file name instead, for example "/home/user/demo.mp4"
+# In my mac web camera is 0, also you can set a video file name instead, for example "/home/user/demo.mp4"
 path = 0
 cap = cv2.VideoCapture(path)
 

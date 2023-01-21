@@ -2,7 +2,9 @@
 from torchvision.io import read_video, write_video
 from torchaudio.io import StreamReader
 import numpy as np
-from PIL import Image
+# from PIL import Image
+from PIL import Image, ImageFilter
+
 
 frames, s, l = read_video('../../data/interim/train/Abuse/Abuse006_x264_10_15.mp4', pts_unit='sec')
 result = np.median(frames, axis=0).astype(np.uint8)

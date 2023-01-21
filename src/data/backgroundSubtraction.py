@@ -81,9 +81,10 @@ if __name__ == '__main__':
 
     # looping on videos to extract foreground
     for i, frame in enumerate(frames):
-        if i % 10 == 0:
+        if i % 3 == 0:
             foreground_image = bac_image.subtract_background(frame)
             Image.fromarray(np.array(frame), "RGB").save(f'{save_path_videos}_{vid_name}_{i}.png')
             Image.fromarray(np.array(foreground_image), "RGB").convert("L").save(f'{save_path_videos}'
                                                                                  f'_{vid_name}_{i}_fg.png')
+
 
