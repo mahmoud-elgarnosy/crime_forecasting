@@ -1,30 +1,62 @@
-# -*- coding: utf-8 -*-
-import click
-import logging
-from pathlib import Path
-from dotenv import find_dotenv, load_dotenv
+import torch
+import os
+from torch.utils.data import DataLoader, Dataset
+import pandas as pd
+from skimage import io
+from torchvision import transforms
+from torch.utils.data import random_split
+from src.data.backgroundSubtraction import BackgroundSubtraction
+from torchvision.io import read_video, write_video
+import numpy as np
+
+# set device
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
-@click.command()
-@click.argument('input_filepath', type=click.Path(exists=True))
-@click.argument('output_filepath', type=click.Path())
-def main(input_filepath, output_filepath):
-    """ Runs data processing scripts to turn raw data from (../raw) into
-        cleaned data ready to be analyzed (saved in ../processed).
-    """
-    logger = logging.getLogger(__name__)
-    logger.info('making final data set from raw data')
+# we're just reading one image and its corresponding label
+class CustomDataset(Dataset):
+    def __init__(self, csv_file, transform=None):
+        self.annotations = pd.read_csv(csv_file)
+        # self.classes = ['Abuse', 'Arrest', 'Arson', 'Assault', 'RoadAccident', 'Burglary', 'Explosion',
+        #                 'Fighting', 'Robbery', 'Shooting', 'Stealing', 'Shoplifting', 'Vandalism', 'Normal']
+
+    def __len__(self):
+        return len(self.annotations)
+
+    def __getitem__(self, index):
+        frames, _, _ = read_video(self.annotations.iloc[index, 0], pts_unit='sec')
+        bac_image = BackgroundSubtraction(frames[0], 5)
+
+        # looping on videos to extract foreground
+        for i, current_frame in enumerate(frames[4::5]):
+            current_frame = np.array(current_frame)
+            foreground_image = bac_image.subtract_background(current_frame)
+
+            foreground_image = foreground_image[np.newaxis, ...]
+            if i == 0:
+                foreground_images = foreground_image
+            else:
+                foreground_images = np.vstack((foreground_images, foreground_image))
+
+        # y_label = torch.tensor(self.classes.index(self.annotations.iloc[index, 1]))
+        y_label = torch.tensor(0 if self.annotations.iloc[index, 1] == "Normal" else 1)
+
+        foreground_images = torch.tensor(foreground_images)
+        foreground_images = foreground_images.permute(0, 3, 1, 2)  # keep dim 0 at dim0 and dim1 to be dim2 dnd dim2 to be dim1
+
+        # if self.transform:
+        #     image = self.transform(image)
+
+        return foreground_images, y_label
 
 
 if __name__ == '__main__':
-    log_fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    logging.basicConfig(level=logging.INFO, format=log_fmt)
+    dataset = CustomDataset(csv_file='../../data/interim/train/train.csv', transform=transforms.ToTensor())
 
-    # not used in this stub but often useful for finding various files
-    project_dir = Path(__file__).resolve().parents[2]
+    train_set, test_set = random_split(dataset, [.8, .2])
+    print(train_set)
+    train_loader = DataLoader(train_set, batch_size=10, shuffle=True)
+    test_loader = DataLoader(test_set, batch_size=2, shuffle=True)
 
-    # find .env automagically by walking up directories until it's found, then
-    # load up the .env entries as environment variables
-    load_dotenv(find_dotenv())
-
-    main()
+    videos, labels = next(iter(train_loader))
+    print(videos.shape)

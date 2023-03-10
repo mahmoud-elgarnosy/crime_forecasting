@@ -6,6 +6,7 @@ from torchvision.io import read_video, write_video
 import numpy as np
 import os
 from joblib import Parallel, delayed
+import cv2
 
 
 def video_name(video_path: str) -> (str, str):
@@ -47,6 +48,26 @@ def writing_csv_train(video_write_path, crime_name, path):
         writer.writerow(row_data)
 
 
+def read_temporal_annotation(annotation_path: str, crime_action) -> dict:
+    """
+    reading and filtering the temporal annotation of the training json file
+    @param annotation_path: the relative path of the annotation file
+    @return: the filtered dictionary of the annotation path based on the chosen crime types
+    """
+
+    # open json file
+    with open(annotation_path, 'r') as f:
+        temporal_annotation = json.load(f)
+    temporal_annotation_copy = temporal_annotation.copy()
+
+    # looping of the dic to remove the crime type that doesn't exist in the chosen crime action
+    for d in temporal_annotation:
+        if all(word not in d for word in crime_action):
+            del temporal_annotation_copy[d]
+
+    return temporal_annotation_copy
+
+
 class UCFTemporalSplitting:
     """
     class for splitting the full video of the crime based on the temporal splitting json file of the version 2 of this
@@ -69,34 +90,16 @@ class UCFTemporalSplitting:
         self.PATH_TRAIN_VIDEO_LEVEL = '../../data/interim/train/'
 
         # CHOSEN CRIME ACTION THAT CAN BE OCCURRED IN CAMPUS
-        self.CRIME_ACTION = ['Abuse', 'Fighting', 'Vandalism']
+        self.CRIME_ACTION = ['Abuse', 'Arrest', 'Arson', 'Assault', 'RoadAccident', 'Burglary', 'Explosion',
+                             'Fighting', 'Robbery', 'Shooting', 'Stealing', 'Shoplifting', 'Vandalism']
 
         # reading the temporal annotation
-        temporal_annotation = self.read_temporal_annotation(self.TRAIN_ANNOTATIONS_SECS_LEVEL)
+        temporal_annotation = read_temporal_annotation(self.TRAIN_ANNOTATIONS_SECS_LEVEL, crime_action=self.CRIME_ACTION)
         self.path_csv = self.PATH_TRAIN_VIDEO_LEVEL
         self.csv_file_type = 'train'
 
         # splitting videos by using joblib multi threads
         self.multiprocessing_temporal_splitting(temporal_annotation)
-
-    def read_temporal_annotation(self, annotation_path: str) -> dict:
-        """
-        reading and filtering the temporal annotation of the training json file
-        @param annotation_path: the relative path of the annotation file
-        @return: the filtered dictionary of the annotation path based on the chosen crime types
-        """
-
-        # open json file
-        with open(annotation_path, 'r') as f:
-            temporal_annotation = json.load(f)
-        temporal_annotation_copy = temporal_annotation.copy()
-
-        # looping of the dic to remove the crime type that doesn't exist in the chosen crime action
-        for d in temporal_annotation:
-            if all(word not in d for word in self.CRIME_ACTION):
-                del temporal_annotation_copy[d]
-
-        return temporal_annotation_copy
 
     def write_videos(self, temporal_annotation, video_pth):
         """
@@ -111,28 +114,26 @@ class UCFTemporalSplitting:
         videos_temporal = pd.DataFrame(videos_temporal)
         # filtering the videos that the period of the crime on it is less than 5
         videos_temporal['period'] = videos_temporal['end'] - videos_temporal['start']
-        videos_temporal = videos_temporal[videos_temporal['period'] >= 5]
+        videos_temporal = videos_temporal[videos_temporal['period'] >= 10]
 
         # define the full path that to read the original video
         full_path = self.VIDEO_PATHS + video_pth
 
         # defining the videos to be separated from the current video
-        videos = {}
+        # crime_videos = {}
+        # normal_videos1 = {}
+        # normal_videos2 = {}
 
-        # if the one video have more than one crime
-        for i in range(len(videos_temporal)):
-            # defining the divided secs that we split the video based on it, for ex. if start = 5, end = 15 [5, 10, 15]
-            videos[i] = np.arange(int(videos_temporal['start'].iloc[i]), int(videos_temporal['end'].iloc[i]), 5)
-
+        def write_normal_crime(videos_i, normal=True):
             # looping on the divided secs
-            for j in range(len(videos[i]) - 1):
-
+            for j in range(len(videos_i) - 1):
                 # define the start and the end of one of the divided videos
-                start = videos[i][j]
-                end = videos[i][j + 1]
+                start = videos_i[j]
+                end = videos_i[j + 1]
 
                 # defining the writing path of one divided videos
                 crime_name, vid_name = video_name(video_pth)
+                crime_name = crime_name if not normal else 'Normal'
                 write_path = self.path_csv + crime_name
                 video_write_path = write_path + '/' + vid_name + f'_{start}_{end}' + '.mp4'
 
@@ -147,6 +148,22 @@ class UCFTemporalSplitting:
 
                 # writing on the csv train
                 writing_csv_train(video_write_path, crime_name, self.path_csv)
+
+        # if the one video have more than one crime
+        for i in range(len(videos_temporal)):
+            video = cv2.VideoCapture(full_path)
+            clip_duration = video.get(cv2.CAP_PROP_POS_MSEC)
+
+            # defining the divided secs that we split the video based on it, for ex. if start = 5, end = 15 [5, 10, 15]
+            crime_videos = np.arange(int(videos_temporal['start'].iloc[i]), int(videos_temporal['end'].iloc[i]), 10)
+
+            start_normal = 0 if not i else int(videos_temporal['end'].iloc[i-1])
+            end_normal = int(videos_temporal['start'].iloc[i + 1]) if i < (len(videos_temporal) - 1) else clip_duration
+            normal_videos1 = np.arange(start_normal, int(videos_temporal['start'].iloc[i]), 10)
+            normal_videos2 = np.arange(int(videos_temporal['end'].iloc[i]), end_normal, 10)
+            write_normal_crime(crime_videos, normal=False)
+            write_normal_crime(normal_videos1)
+            write_normal_crime(normal_videos2)
 
     def multiprocessing_temporal_splitting(self, temporal_annotation):
         """
