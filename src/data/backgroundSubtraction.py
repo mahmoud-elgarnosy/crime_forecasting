@@ -3,7 +3,7 @@ import numpy as np
 from PIL import Image
 import pandas as pd
 import os
-from UCFCrimeTemporalSplitting import video_name
+from src.data.UCFCrimeTemporalSplitting import video_name
 import cv2
 import random
 from skimage import metrics

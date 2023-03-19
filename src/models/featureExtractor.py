@@ -1,27 +1,29 @@
-import models.Models as Models
-from torchstat import stat
+import src.models.Models as Models
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torchvision import models
-from torchinfo import summary
-
-# model = models.vgg16(pretrained=True)
-# print(model)
-drn = Models.drn_c_58(pretrained=True)
-print(drn)
+import torch.optim as optim
 
 
-# print(stat(drn, input_size=(3, 224, 224)))
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+# Hyper Parameters
+INPUT_SIZE = 9
+HIDDEN_SIZE = 64
+NUM_CLASSES = 1
+LEARNING_RATE = .001
+Decay = .9
+
+
 class CnnDnnLstm(nn.Module):
-    def __init__(self, num_classes=2):
+    def __init__(self, num_classes=14, hidden_size=HIDDEN_SIZE):
         super(CnnDnnLstm, self).__init__()
         drn_model = Models.drn_c_58(pretrained=True)
         self.drn = torch.nn.Sequential(*(list(drn_model.children())[:-1]))
         self.flatten = nn.Flatten()
         self.fc = nn.Sequential(nn.Linear(512, 300))
-        self.lstm = nn.LSTM(input_size=300, hidden_size=256, num_layers=3)
-        self.fc1 = nn.Linear(256, 128)
+        self.lstm = nn.LSTM(input_size=300, hidden_size=HIDDEN_SIZE, num_layers=2)
+        self.fc1 = nn.Linear(HIDDEN_SIZE, 128)
         self.fc2 = nn.Linear(128, num_classes)
 
     def forward(self, x_3d):
@@ -39,6 +41,8 @@ class CnnDnnLstm(nn.Module):
         return x
 
 
-model_drn = CnnDnnLstm()
+# model_drn = CnnDnnLstm()
+model = CnnDnnLstm(hidden_size=HIDDEN_SIZE, num_classes=NUM_CLASSES).to(device)
+optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
 # print(summary(model_drn, input_size=(32, 30, 3, 224, 224)))
-print(model_drn)
+# print(model_drn)

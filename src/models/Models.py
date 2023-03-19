@@ -1,5 +1,5 @@
 import torch.utils.model_zoo as model_zoo
-from DRNModel import DRN, Bottleneck, BasicBlock, DRN_A
+from src.models.DRNModel import DRN, Bottleneck, BasicBlock, DRN_A
 
 webroot = 'http://dl.yf.io/drn/'
 

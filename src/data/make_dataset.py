@@ -24,7 +24,14 @@ class CustomDataset(Dataset):
         return len(self.annotations)
 
     def __getitem__(self, index):
-        frames, _, _ = read_video(self.annotations.iloc[index, 0], pts_unit='sec')
+        frames, _, _ = read_video('..' + self.annotations.iloc[index, 0].split('..')[-1], pts_unit='sec')
+        y_label = torch.tensor(0 if self.annotations.iloc[index, 1] == "Normal" else 1)
+        i = 0
+        while not frames.shape[0] == 301:
+            frames, _, _ = read_video('..' + self.annotations.iloc[index + i, 0].split('..')[-1], pts_unit='sec')
+            y_label = torch.tensor(0 if self.annotations.iloc[index + i, 1] == "Normal" else 1)
+
+            i += 1
         bac_image = BackgroundSubtraction(frames[0], 5)
 
         # looping on videos to extract foreground
@@ -39,10 +46,10 @@ class CustomDataset(Dataset):
                 foreground_images = np.vstack((foreground_images, foreground_image))
 
         # y_label = torch.tensor(self.classes.index(self.annotations.iloc[index, 1]))
-        y_label = torch.tensor(0 if self.annotations.iloc[index, 1] == "Normal" else 1)
 
         foreground_images = torch.tensor(foreground_images)
-        foreground_images = foreground_images.permute(0, 3, 1, 2)  # keep dim 0 at dim0 and dim1 to be dim2 dnd dim2 to be dim1
+        foreground_images = foreground_images.permute(0, 3, 1,
+                                                      2)  # keep dim 0 at dim0 and dim1 to be dim2 dnd dim2 to be dim1
 
         # if self.transform:
         #     image = self.transform(image)
@@ -54,7 +61,6 @@ if __name__ == '__main__':
     dataset = CustomDataset(csv_file='../../data/interim/train/train.csv', transform=transforms.ToTensor())
 
     train_set, test_set = random_split(dataset, [.8, .2])
-    print(train_set)
     train_loader = DataLoader(train_set, batch_size=10, shuffle=True)
     test_loader = DataLoader(test_set, batch_size=2, shuffle=True)
 

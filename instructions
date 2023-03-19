@@ -9,7 +9,7 @@ C:\Users\mahmo\anaconda3\Scripts\conda.exe install -p C:/Users/mahmo/anaconda3/e
 
 wsl --install
 https://www.nginx.com/blog/video-streaming-for-remote-learning-with-nginx/
-Just add events { } above the http { line:
+Just add events { } above the http {line:
 
 conda install -c conda-forge opencv
 pip install -U pip setuptools wheel
