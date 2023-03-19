@@ -24,7 +24,7 @@ class CustomDataset(Dataset):
         return len(self.annotations)
 
     def __getitem__(self, index):
-        frames, _, _ = read_video('..' + self.annotations.iloc[index, 0].split('..')[-1], pts_unit='sec')
+        frames, _, _ = read_video(self.annotations.iloc[index, 0].split('..')[-1], pts_unit='sec')
         y_label = torch.tensor(0 if self.annotations.iloc[index, 1] == "Normal" else 1)
         i = 0
         while not frames.shape[0] == 301:
