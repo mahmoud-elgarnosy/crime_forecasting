@@ -75,19 +75,19 @@ class UCFTemporalSplitting:
     5-10, 10-15, 15-20
     """
 
-    def __init__(self):
+    def __init__(self, annotations, train_path, train_video_path):
         # DEFINE CONSTANTS
         # define the frame per seconds of the video
         self.FRAMES_PER_SEC = 30
 
         # define the path of the temporal json file
-        self.TRAIN_ANNOTATIONS_SECS_LEVEL = '../../data/raw/ucfcrime_v2/public_ucfcrimev2/annotations/train.json'
+        self.TRAIN_ANNOTATIONS_SECS_LEVEL = annotations
 
         # define the relative path of the ucf_crime videos
-        self.VIDEO_PATHS = '../../data/raw/'
+        self.VIDEO_PATHS = train_path
 
         # define the writing path of the videos splitting based on temporal
-        self.PATH_TRAIN_VIDEO_LEVEL = '../../data/interim/train/'
+        self.PATH_TRAIN_VIDEO_LEVEL = train_video_path
 
         # CHOSEN CRIME ACTION THAT CAN BE OCCURRED IN CAMPUS
         self.CRIME_ACTION = ['Abuse', 'Arrest', 'Arson', 'Assault', 'RoadAccident', 'Burglary', 'Explosion',
@@ -176,4 +176,5 @@ class UCFTemporalSplitting:
 
 if __name__ == "__main__":
     # splitting videos
-    temp_splitting_train = UCFTemporalSplitting()
+    temp_splitting_train = UCFTemporalSplitting('../../data/raw/ucfcrime_v2/public_ucfcrimev2/annotations/train.json',
+                                                '../../data/raw/', '../../data/interim/train/')
