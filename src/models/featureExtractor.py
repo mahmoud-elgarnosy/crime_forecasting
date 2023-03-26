@@ -25,6 +25,7 @@ class CnnDnnLstm(nn.Module):
         self.lstm = nn.LSTM(input_size=300, hidden_size=HIDDEN_SIZE, num_layers=2)
         self.fc1 = nn.Linear(HIDDEN_SIZE, 128)
         self.fc2 = nn.Linear(128, num_classes)
+        self.sigmoid = nn.Sigmoid()
 
     def forward(self, x_3d):
         hidden = None
@@ -38,6 +39,7 @@ class CnnDnnLstm(nn.Module):
         x = self.fc1(out[-1, :, :])
         x = F.relu(x)
         x = self.fc2(x)
+        x = self.sigmoid(self.output(x))
         return x
 
 

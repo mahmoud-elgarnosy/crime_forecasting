@@ -24,7 +24,7 @@ class CustomDataset(Dataset):
         return len(self.annotations)
 
     def __getitem__(self, index):
-        frames, _, _ = read_video(self.annotations.iloc[index, 0].split('..')[-1], pts_unit='sec')
+        frames, _, _ = read_video('..' + self.annotations.iloc[index, 0].split('..')[-1], pts_unit='sec')
         y_label = torch.tensor(0 if self.annotations.iloc[index, 1] == "Normal" else 1)
         i = 0
         while not frames.shape[0] == 301:
@@ -61,7 +61,7 @@ if __name__ == '__main__':
     dataset = CustomDataset(csv_file='../../data/interim/train/train.csv', transform=transforms.ToTensor())
 
     train_set, test_set = random_split(dataset, [.8, .2])
-    train_loader = DataLoader(train_set, batch_size=10, shuffle=True)
+    train_loader = DataLoader(train_set, batch_size=20, shuffle=True)
     test_loader = DataLoader(test_set, batch_size=2, shuffle=True)
 
     videos, labels = next(iter(train_loader))
