@@ -39,7 +39,7 @@ class CnnDnnLstm(nn.Module):
         x = self.fc1(out[-1, :, :])
         x = F.relu(x)
         x = self.fc2(x)
-        x = self.sigmoid(self.output(x))
+        x = self.sigmoid(x)
         return x
 
 
